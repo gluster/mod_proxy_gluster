@@ -1,0 +1,32 @@
+# Example configuration for mod_proxy_gluster
+#
+# See https://forge.gluster.org/mod_proxy_gluster for more details on
+# mod_proxy_gluster. mod_proxy and its configuration directives are explained
+# in the Apache HTTP Server documentation at
+# http://httpd.apache.org/docs/2.4/mod/mod_proxy.html.
+#
+LoadModule proxy_gluster_module modules/mod_proxy_gluster.so
+
+# Create a virtual directory /download, and retrieve the files from the
+# directory iso-images that is available in the Gluster Volume called bigfiles.
+# The volume layout is fetched from the non-public server called
+# storage.int.example.net (which can be a virtual/rrdns IP-address).
+ProxyPass /download gluster://storage.int.example.net/bigfiles/iso-images
+
+# Rewrite the HTTP-headers to this Apache server, and not mention the storage
+# backend at all.
+ProxyPassReverse /download gluster://storage.int.example.net/bigfiles/iso-images
+
+
+# It is also possible to put the above in a <Location> stanza.
+<Localtion /download>
+	ProxyPass / gluster://storage.int.example.net/bigfiles/iso-images
+	ProxyPassReverse / gluster://storage.int.example.net/bigfiles/iso-images
+</Location>
+
+
+# You can enable the signature for the server to verify that the directory
+# listings are coming from the mod_proxy_gluster module. Set it globally, or in
+# the <Location>.
+ServerSignature On
+
