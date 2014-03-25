@@ -25,6 +25,9 @@
 #include <api/glfs.h>
 #define GLFS_GLUSTERD_PORT 24007
 
+#include <stddef.h> /* For offsetof */
+
+
 module AP_MODULE_DECLARE_DATA proxy_gluster_module;
 
 /* from samba/source3/modules/vfs_gluster.c */
@@ -255,6 +258,7 @@ apr_status_t proxy_send_dir_listing(request_rec *r, proxy_glfs_dir_conf *dconf,
 	apr_pool_t *p = r->pool;
 	apr_bucket_brigade *out = apr_brigade_create(p, c->bucket_alloc);
 	apr_status_t rv;
+	struct dirent *pos = NULL;
 
 	char *dir, *path, *reldir, *site, *str, *type;
 
@@ -389,16 +393,21 @@ apr_status_t proxy_send_dir_listing(request_rec *r, proxy_glfs_dir_conf *dconf,
 
 	/* loop through each line of directory */
 	while (BODY == ctx->state) {
-		struct dirent *de;
+		struct dirent *de = NULL;
 		struct stat st;
 		char *filename = NULL;
-		int len;
+		int ret;
 		char datestr[APR_RFC822_DATE_LEN];
 
-		/* TODO: get the next dirent */
-		de = glfs_readdirplus(fd, &st);
+		/* TODO: maybe replace with malloc()/free()? */
+		de = apr_pcalloc(p, offsetof(struct dirent, d_name) + NAME_MAX);
 
-		if (de == NULL) {
+		ret = glfs_readdirplus_r(fd, &st, de, &pos);
+		if (ret == 0 && pos == ((struct dirent*) NULL)) {
+			ctx->state = FOOTER;
+			break;
+		} else if (ret != 0) {
+			/* TODO: return sensible error */
 			ctx->state = FOOTER;
 			break;
 		}
@@ -410,9 +419,9 @@ apr_status_t proxy_send_dir_listing(request_rec *r, proxy_glfs_dir_conf *dconf,
 			char link_ptr[APR_PATH_MAX];
 			char *full_path = NULL;
 			full_path = apr_psprintf(p, "%s/%s", _dir, filename);
-			len = glfs_readlink(dconf->fs, full_path, link_ptr,
+			ret = glfs_readlink(dconf->fs, full_path, link_ptr,
 					    APR_PATH_MAX);
-			link_ptr[len] = '\0';
+			link_ptr[ret] = '\0';
 
 			str = apr_psprintf(p, "%s <a href=\"%s\">%s -> %s</a>",
 					   ap_escape_html(p, ctx->buffer),
@@ -544,16 +553,16 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 
 	/* is this for us? */
 	if (proxyhost) {
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r, "declining URL "
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "declining URL "
 			      "%s - proxyhost %s specified:", url, proxyhost);
 		return DECLINED;	/* proxy connections are via HTTP */
 	}
 	if (strncasecmp(url, "gluster:", 8)) {
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r, "declining URL "
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "declining URL "
 			      "%s - not gluster:", url);
 		return DECLINED;	/* only interested in Gluster */
 	}
-	ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r, "serving URL %s", url);
+	ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "serving URL %s", url);
 
 	/* we only support GET and HEAD */
 	if (r->method_number != M_GET)
@@ -586,8 +595,8 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 	if (path == NULL || strlen(path) == 0)
 		path = apr_pstrdup(p, "/");
 
-	ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01036)
-		      "connecting %s to %s:%d", url, dconf->server, connectport);
+	ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "connecting %s to %s:%d",
+		      url, dconf->server, connectport);
 
 	if (dconf->fs == NULL) {
 		dconf->fs = proxy_glfs_get_fs(p, r, dconf);
@@ -596,7 +605,7 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 			return glfs_proxyerror(r, dconf, HTTP_SERVICE_UNAVAILABLE, "Failed to connect to Gluster");
 	}
 
-	ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r,
+	ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
 		      "connected to the Gluster brick(s)");
 
 	/* set request; "path" holds last path component */
@@ -669,7 +678,7 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 
 	if (r->content_type) {
 		apr_table_setn(r->headers_out, "Content-Type", r->content_type);
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
 			      "Content-Type set to %s", r->content_type);
 	}
 
@@ -690,7 +699,7 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 
 	/* set content-encoding (not for dir listings, they are uncompressed) */
 	if (r->content_encoding != NULL && r->content_encoding[0] != '\0') {
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
 			      "Content-Encoding set to %s",
 			      r->content_encoding);
 		apr_table_setn(r->headers_out, "Content-Encoding",
@@ -723,27 +732,27 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 							    path, errno));
 		}
 
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
 			      "start body send");
 
 		/* read the body, pass it to the output filters */
 		while (pos < size) {
-			len =
-			    glfs_pread(fd, &buf, conf->io_buffer_size, pos, 0);
+			int len;
+			len = glfs_pread(fd, &buf, conf->io_buffer_size,
+					 pos, 0);
 			pos += len;
 
-			if (ap_get_brigade
-			    (r->output_filters, bb, AP_MODE_READBYTES,
-			     APR_BLOCK_READ, len) != APR_SUCCESS) {
+			if (ap_get_brigade(r->output_filters, bb, AP_MODE_READBYTES,
+					   APR_BLOCK_READ, len) != APR_SUCCESS) {
 				finish = TRUE;
-			} else if (ap_fwrite(r->output_filters, bb, buf, len) !=
-				   APR_SUCCESS) {
+			} else if (ap_fwrite(r->output_filters, bb, buf, len)
+				  != APR_SUCCESS) {
 				finish = TRUE;
 				ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r,
 					      "ap_fwrite() failed");
-			} /* try send what we read */
-			else if (ap_pass_brigade(r->output_filters, bb) !=
-				 APR_SUCCESS || c->aborted) {
+			/* try send what we read */
+			} else if (ap_pass_brigade(r->output_filters, bb)
+				  != APR_SUCCESS || c->aborted) {
 				/* Ack! Phbtt! Die! User aborted! */
 				finish = TRUE;
 			}
@@ -763,7 +772,7 @@ proxy_glfs_handler(request_rec *r, proxy_worker *worker,
 			}
 		}
 
-		ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r, "end body send");
+		ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "end body send");
 
 		glfs_close(fd);
 	}
@@ -791,11 +800,12 @@ static void ap_proxy_glfs_register_hook(apr_pool_t * p)
 	proxy_hook_canon_handler(proxy_glfs_canon, NULL, NULL, APR_HOOK_MIDDLE);
 }
 
-AP_DECLARE_MODULE(proxy_gluster) = {
-	STANDARD20_MODULE_STUFF, create_proxy_glfs_dir_config,	/* create per-directory config structure */
-	    NULL,		/* merge per-directory config structures */
-	    NULL,		/* create per-server config structure */
-	    NULL,		/* merge per-server config structures */
-	    NULL,		/* command apr_table_t */
-	    ap_proxy_glfs_register_hook	/* register hooks */
+module AP_MODULE_DECLARE_DATA proxy_gluster_module = {
+	STANDARD20_MODULE_STUFF,
+	create_proxy_glfs_dir_config,	/* create per-directory config structure */
+	NULL,				/* merge per-directory config structures */
+	NULL,				/* create per-server config structure */
+	NULL,				/* merge per-server config structures */
+	NULL,				/* command apr_table_t */
+	ap_proxy_glfs_register_hook	/* register hooks */
 };
