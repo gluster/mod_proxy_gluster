@@ -1,0 +1,18 @@
+TODO
+
+  These are some items that need improvement. The list is likely not
+  exhaustive, nor in a particular order.
+
+  Patches, suggestions and other things can be send to the author and/or the
+  Gluster Developers Discussion List. Email addresses are in the main README.
+
+
+- see the TODO comments in mod_proxy_gluster.c
+- use auto-tools for building, see mod_nss for a possible way, update README
+- verify the ap_proxyerror() calls
+- security checks of the code
+- make the code more readable, use smaller functions etc...
+- filtering directory entries (like '*.tar.gz') does not work
+- make logging by libgfapi work, add config option for filename and loglevel
+- review the logging with ap_log_rerror()
+- find out if/how mod_proxy can be used in combination with mod_php and all
