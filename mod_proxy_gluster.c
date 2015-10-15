@@ -753,7 +753,7 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
     else {
         apr_table_setn(r->headers_out, "Content-Length",
                        apr_psprintf(p, "%ld", size));
-        ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
                       "Content-Length set to %ld", size);
     }
 
