@@ -697,7 +697,6 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
                            ap_get_server_description());
             apr_table_setn(r->headers_out, "Location",
                            apr_psprintf(p, "%s/", r->parsed_uri.path));
-            //apr_table_setn(r->headers_out, "lastchar", sprintf("%s", &path[len]));
             ap_set_content_type(r,
                                 apr_pstrcat(p, "text/html;charset=",
                                             "ISO-8859-1", NULL));
