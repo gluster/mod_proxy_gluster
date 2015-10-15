@@ -685,19 +685,34 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
     size = st.st_size;
 
     /* Check if a directory, and missing the trailing slash - redirect */
-    /* if (S_ISDIR(st.st_mode) && !strcmp(&path[len-1],"/")) { 
-       r->status = HTTP_MOVED_PERMANENTLY;
-       r->status_line = "301 Moved Permanently";
+    if (S_ISDIR(st.st_mode) && strcmp(&path[len - 1], "/") != 0) {
+        r->status = HTTP_MOVED_PERMANENTLY;
+        r->status_line = "301 Moved Permanently";
 
-       { 
-       char dates[APR_RFC822_DATE_LEN];
-       apr_rfc822_date(dates, apr_time_now());
-       apr_table_setn(r->headers_out, "Date", apr_pstrdup(p, dates));
-       apr_table_setn(r->headers_out, "Server", ap_get_server_description());
-       apr_table_setn(r->headers_out, "Location", ap_get_server_description());
-       ap_set_content_type(r, apr_pstrcat(p, "text/html;charset=", "ISO-8859-1", NULL));
-       }
-       } */
+        {
+            char dates[APR_RFC822_DATE_LEN];
+            apr_rfc822_date(dates, apr_time_now());
+            apr_table_setn(r->headers_out, "Date", apr_pstrdup(p, dates));
+            apr_table_setn(r->headers_out, "Server",
+                           ap_get_server_description());
+            apr_table_setn(r->headers_out, "Location",
+                           apr_psprintf(p, "%s/", r->parsed_uri.path));
+            //apr_table_setn(r->headers_out, "lastchar", sprintf("%s", &path[len]));
+            ap_set_content_type(r,
+                                apr_pstrcat(p, "text/html;charset=",
+                                            "ISO-8859-1", NULL));
+        }
+
+        /* finish */
+        /* TODO: we don't want to remove the glfs_t here... */
+#if 0
+        proxy_glfs_cleanup(conf);
+#endif
+
+        apr_brigade_destroy(bb);
+        return OK;
+
+    }
 
 
 
@@ -753,7 +768,7 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
         char datestr[APR_RFC822_DATE_LEN];
         apr_rfc822_date(datestr, mtime);
         apr_table_set(r->headers_out, "Last-Modified", datestr);
-        ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
                       "Last-Modified set to %s", datestr);
     }
 
