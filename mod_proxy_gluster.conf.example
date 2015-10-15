@@ -19,9 +19,9 @@ ProxyPassReverse /download gluster://storage.int.example.net/bigfiles/iso-images
 
 
 # It is also possible to put the above in a <Location> stanza.
-<Localtion /download>
-	ProxyPass / gluster://storage.int.example.net/bigfiles/iso-images
-	ProxyPassReverse / gluster://storage.int.example.net/bigfiles/iso-images
+<Location /download>
+	ProxyPass gluster://storage.int.example.net/bigfiles/iso-images
+	ProxyPassReverse gluster://storage.int.example.net/bigfiles/iso-images
 </Location>
 
 
