@@ -357,7 +357,7 @@ static
         /* TODO: insert <pre>README</pre> */
         str =
             apr_psprintf(p,
-                         "</h1>\n<table width=\"100%%\">\n<thead>\n<tr>\n<th align=left>Name</th>\n"
+                         "</h1>\n<hr>\n<table width=\"100%%\">\n<thead>\n<tr>\n<th align=left>Name</th>\n"
                          "<th align=left>Last Modified</th>\n<th align=left>Size</th>\n</tr>\n"
                          "</thead>\n<tbody class=\"menuitem\">\n");
         APR_BRIGADE_INSERT_TAIL(out,
@@ -520,7 +520,7 @@ static
     glfs_closedir(fd);
 
     if (FOOTER == ctx->state) {
-        const char *sig = "</table>\n"
+        const char *sig = "</table>\n<hr>\n"
             "<!--#include virtual=\"/includes/FOOTER.html\"-->\n";
 
         //str = apr_psprintf(p, "%s\n", ap_psignature(sig, r));
@@ -684,7 +684,7 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
                            apr_psprintf(p, "%s/", r->parsed_uri.path));
             ap_set_content_type(r,
                                 apr_pstrcat(p, "text/html;charset=",
-                                            "ISO-8859-1", NULL));
+                                            "UTF-8", NULL));
         }
 
         /* finish */
@@ -733,7 +733,7 @@ proxy_glfs_handler(request_rec * r, proxy_worker * worker,
     /* set content-type */
     if (dirlisting) {
         ap_set_content_type(r, apr_pstrcat(p, "text/html;charset=",
-                                           "ISO-8859-1", NULL));
+                                           "UTF-8", NULL));
     }
     else {
         apr_table_setn(r->headers_out, "Content-Length",
