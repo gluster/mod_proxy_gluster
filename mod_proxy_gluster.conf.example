@@ -17,13 +17,17 @@ ProxyPass /download gluster://storage.int.example.net/bigfiles/iso-images
 # backend at all.
 ProxyPassReverse /download gluster://storage.int.example.net/bigfiles/iso-images
 
-
 # It is also possible to put the above in a <Location> stanza.
 <Location /download>
 	ProxyPass gluster://storage.int.example.net/bigfiles/iso-images
 	ProxyPassReverse gluster://storage.int.example.net/bigfiles/iso-images
 </Location>
 
+# It is required to put the HTML headers and footers into includes, in order to reduce the amount of HTML in the actual module
+# The ProxyMatch is used with a trailing /, because we only want the includes on actual HTML generated pages, not content
+<ProxyMatch ^.*/$>
+    SetOutputFilter INCLUDES
+</ProxyMatch>
 
 # You can enable the signature for the server to verify that the directory
 # listings are coming from the mod_proxy_gluster module. Set it globally, or in
