@@ -47,7 +47,6 @@ There are three ways to build this module:
 
 General Gluster questions should be directed to the Gluster Users mailing list <gluster-users@gluster.org>.
 
-Niels de Vos <ndevos@redhat.com> is the main developer of mod_proxy_gluster.  For most suggestions and discussions send an email to the Gluster Developers Discussion List <gluster-devel@nongnu.org> and add Niels on CC.
+Niels de Vos <ndevos@redhat.com> is the main developer of mod_proxy_gluster. For most suggestions and discussions send an email to the Gluster Developers Discussion List <gluster-devel@gluster.org> and add Niels on CC.
 
 David Jericho <davidj@diskpig.org> extended the source for a mirroring service.
-
