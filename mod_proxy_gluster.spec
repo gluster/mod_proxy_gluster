@@ -5,14 +5,13 @@
 %{!?_httpd_mmn: %{expand: %%global _httpd_mmn %%(cat %{_includedir}/httpd/.mmn 2>/dev/null || echo 0-0)}}
 
 Name:		mod_proxy_gluster
-Version:	0.8.1
+Version:	0.9
 Release:	0.1%{?dist}
 Summary:	Gluster support module for mod_proxy
 Group:		System Environment/Daemons
 License:	ASL 2.0
-URL:		https://forge.gluster.org/mod_proxy_gluster
-#Source: 	http://forge.gluster.org/mod_proxy_gluster/mod_proxy_gluster/%{name}-%{version}.tar.gz
-Source: 	%{name}-%{version}.tar.gz
+URL:		https://github.com/gluster/mod_proxy_gluster
+Source:		https://github.com/gluster/mod_proxy_gluster/archive/v%{version}/%{name}-v%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:	httpd-devel, apr-devel
 BuildRequires:	glusterfs-api-devel >= 3.4, glusterfs-devel
@@ -78,6 +77,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Mar 25 2014 Niels de Vos <ndevos@redhat.com> 0.9-0.1
+- Move source URL to GitHub
+- Update to version 0.9
+
 * Tue Mar 25 2014 Niels de Vos <ndevos@redhat.com> 0.8.1-0.1
 - Update to version 0.8.1
 - Require glusterfs-api-devel >= 3.4, for glfs_readdir_r()

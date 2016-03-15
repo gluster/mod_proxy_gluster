@@ -1,6 +1,6 @@
 # Example configuration for mod_proxy_gluster
 #
-# See https://forge.gluster.org/mod_proxy_gluster for more details on
+# See https://github.com/gluster/mod_proxy_gluster for more details on
 # mod_proxy_gluster. mod_proxy and its configuration directives are explained
 # in the Apache HTTP Server documentation at
 # http://httpd.apache.org/docs/2.4/mod/mod_proxy.html.
