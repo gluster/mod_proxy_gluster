@@ -69,7 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc README LICENSE mod_proxy_gluster.conf.example
+%doc README.md LICENSE mod_proxy_gluster.conf.example
 %if "%{_httpd_modconfdir}" != "%{_httpd_confdir}"
 %config(noreplace) %{_httpd_modconfdir}/01-proxy-gluster.conf
 %endif
